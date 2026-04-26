@@ -25,3 +25,26 @@ docker compose up -d
 cd backend
 npm install
 npm run dev
+
+
+PORT=3001
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=aidocdb
+DB_USER=postgres
+DB_PASSWORD=postgres
+GROQ_API_KEY=your_key
+
+
+---
+
+# Próxima fase técnica
+## Fase 1 — Backend profissional
+Vamos criar:
+
+```text id="nextphase1"
+routes/
+controllers/
+services/
+middlewares/
+utils/
