@@ -2,27 +2,19 @@ require('dotenv').config()
 
 const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
-const pool = require('./db/connection')
+
+const routes = require('./routes')
+const errorHandler = require('./middlewares/error.middleware')
 
 async function start() {
   await fastify.register(cors, { origin: true })
 
-  fastify.get('/health', async () => {
-    return { status: 'ok', message: 'API running' }
-  })
+  fastify.register(routes)
 
-  fastify.get('/db-test', async () => {
-    const result = await pool.query('SELECT NOW()')
-    return {
-      status: 'connected',
-      time: result.rows[0]
-    }
-  })
-
-  const PORT = process.env.PORT || 3001
+  fastify.setErrorHandler(errorHandler)
 
   await fastify.listen({
-    port: PORT,
+    port: process.env.PORT || 3001,
     host: '0.0.0.0'
   })
 }
