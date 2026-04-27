@@ -1,66 +1,125 @@
-const { z } = require('zod')
+const pdf = require("pdf-parse");
 
 const {
   createDocument,
   listDocuments,
-  getDocumentById
-} = require('../services/documents.service')
+  getDocumentById,
+  deleteDocument,
+} = require("../services/documents.service");
 
 async function upload(request, reply) {
   try {
-    const schema = z.object({
-      title: z.string().min(1),
-      content: z.string().min(1)
-    })
+    const file = await request.file();
 
-    const data = schema.parse(request.body)
+    if (!file) {
+      return reply.status(400).send({
+        message: "Arquivo não enviado",
+      });
+    }
+
+    const chunks = [];
+
+    for await (const chunk of file.file) {
+      chunks.push(chunk);
+    }
+
+    const buffer = Buffer.concat(chunks);
+
+    let content = "";
+    const title = file.filename;
+
+    if (file.mimetype === "application/pdf") {
+      try {
+        const data = await pdf(buffer);
+
+        content = (data.text || "").trim();
+
+        if (!content) {
+          content = `PDF enviado (${title}), mas sem texto extraível.`;
+        }
+      } catch (err) {
+        console.error("Erro parse PDF:", err);
+
+        content = `PDF enviado (${title}), mas falhou ao extrair texto.`;
+      }
+    } else {
+      content = buffer.toString("utf-8").trim();
+    }
 
     const document = await createDocument({
-      ...data,
-      userId: request.user.id
-    })
+      title,
+      content,
+      userId: request.user.id,
+    });
 
     return reply.status(201).send({
-      document
-    })
+      message: "Upload realizado com sucesso",
+      document,
+    });
   } catch (error) {
-    return reply.status(400).send({
-      message: 'Dados inválidos'
-    })
+    console.error("ERRO UPLOAD:", error);
+
+    return reply.status(500).send({
+      message: "Erro ao processar arquivo",
+    });
   }
 }
 
 async function list(request, reply) {
-  const documents = await listDocuments(
-    request.user.id
-  )
-
-  return reply.send({
-    documents
-  })
+  try {
+    const documents = await listDocuments(request.user.id);
+    return reply.send(documents);
+  } catch (error) {
+    return reply.status(500).send({
+      message: "Erro ao listar documentos",
+    });
+  }
 }
 
 async function show(request, reply) {
-  const { id } = request.params
+  try {
+    const { id } = request.params;
 
-  const document = await getDocumentById(
-    id,
-    request.user.id
-  )
+    const document = await getDocumentById(
+      id,
+      request.user.id
+    );
 
-  if (!document) {
-    return reply.status(404).send({
-      message: 'Documento não encontrado'
-    })
+    if (!document) {
+      return reply.status(404).send({
+        message: "Documento não encontrado",
+      });
+    }
+
+    return reply.send(document);
+  } catch (error) {
+    return reply.status(500).send({
+      message: "Erro ao buscar documento",
+    });
   }
+}
 
-  return reply.send({
-    document
-  })
+async function remove(request, reply) {
+  try {
+    const { id } = request.params;
+
+    await deleteDocument(id, request.user.id);
+
+    return reply.send({
+      message: "Documento excluído com sucesso",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return reply.status(500).send({
+      message: "Erro ao excluir documento",
+    });
+  }
 }
 
 module.exports = {
   upload,
   list,
-  show
-}
+  show,
+  remove,
+};
