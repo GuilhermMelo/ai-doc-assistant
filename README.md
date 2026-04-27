@@ -1,50 +1,37 @@
-# AI Doc Assistant
+# 🤖 AI Document Assistant
 
-Assistente inteligente para leitura, análise e extração de informações de documentos utilizando IA.
+REST API desenvolvida em Node.js + Fastify para permitir perguntas em linguagem natural sobre documentos de texto, integrada com IA via Groq.
 
-## Tecnologias
+O usuário pode:
+
+- Criar conta
+- Fazer login com JWT
+- Enviar documentos
+- Fazer perguntas sobre documentos
+- Consultar histórico de conversas
+
+---
+
+# 🚀 Tecnologias Utilizadas
+
 - Node.js
 - Fastify
 - PostgreSQL
 - Docker
+- JWT Authentication
+- Groq API (LLM)
+- UUID
 - JavaScript
-- IA (Groq API)
-
-## Funcionalidades
-- Upload de documentos
-- Leitura de PDF e DOCX
-- Extração de texto
-- Perguntas sobre arquivos
-- Resumos automáticos
-- API REST
-
-## Como rodar
-
-```bash
-docker compose up -d
-cd backend
-npm install
-npm run dev
-
-
-PORT=3001
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=aidocdb
-DB_USER=postgres
-DB_PASSWORD=postgres
-GROQ_API_KEY=your_key
-
 
 ---
 
-# Próxima fase técnica
-## Fase 1 — Backend profissional
-Vamos criar:
+# 🏗️ Arquitetura
 
-```text id="nextphase1"
-routes/
-controllers/
-services/
-middlewares/
-utils/
+```text
+Cliente (Insomnia / Frontend)
+        ↓
+ Fastify API
+        ↓
+ PostgreSQL
+        ↓
+ Groq API (IA)
