@@ -4,12 +4,17 @@ const fastify = require('fastify')({ logger: true })
 const cors = require('@fastify/cors')
 
 const routes = require('./routes')
+const documentsRoutes = require('./routes/documents.routes')
 const errorHandler = require('./middlewares/error.middleware')
 
 async function start() {
   await fastify.register(cors, { origin: true })
 
   fastify.register(routes)
+
+  fastify.register(documentsRoutes, {
+    prefix: '/documents'
+  })
 
   fastify.setErrorHandler(errorHandler)
 

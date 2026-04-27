@@ -1,5 +1,58 @@
-const bcrypt = require('bcrypt')
+// const bcrypt = require('bcrypt')
+// const pool = require('../db/connection')
+
+// async function registerUser({ name, email, password }) {
+//   const exists = await pool.query(
+//     'SELECT id FROM users WHERE email = $1',
+//     [email]
+//   )
+
+//   if (exists.rows.length > 0) {
+//     throw new Error('EMAIL_EXISTS')
+//   }
+
+//   const passwordHash = await bcrypt.hash(password, 10)
+
+//   const result = await pool.query(
+//     `INSERT INTO users (name, email, password_hash)
+//      VALUES ($1, $2, $3)
+//      RETURNING id, name, email`,
+//     [name, email, passwordHash]
+//   )
+
+//   return result.rows[0]
+// }
+
+// async function loginUser({ email, password }) {
+//   const result = await pool.query(
+//     'SELECT * FROM users WHERE email = $1',
+//     [email]
+//   )
+
+//   const user = result.rows[0]
+
+//   if (!user) {
+//     throw new Error('INVALID_LOGIN')
+//   }
+
+//   const valid = await bcrypt.compare(password, user.password_hash)
+
+//   if (!valid) {
+//     throw new Error('INVALID_LOGIN')
+//   }
+
+//   return user
+// }
+
+// module.exports = {
+//   registerUser,
+//   loginUser
+// }
+
+
 const pool = require('../db/connection')
+const bcrypt = require('bcrypt')
+const { generateToken } = require('./jwt.service')
 
 async function registerUser({ name, email, password }) {
   const exists = await pool.query(
@@ -8,16 +61,16 @@ async function registerUser({ name, email, password }) {
   )
 
   if (exists.rows.length > 0) {
-    throw new Error('EMAIL_EXISTS')
+    throw new Error('E-mail já cadastrado')
   }
 
-  const passwordHash = await bcrypt.hash(password, 10)
+  const hash = await bcrypt.hash(password, 10)
 
   const result = await pool.query(
     `INSERT INTO users (name, email, password_hash)
      VALUES ($1, $2, $3)
      RETURNING id, name, email`,
-    [name, email, passwordHash]
+    [name, email, hash]
   )
 
   return result.rows[0]
@@ -25,23 +78,38 @@ async function registerUser({ name, email, password }) {
 
 async function loginUser({ email, password }) {
   const result = await pool.query(
-    'SELECT * FROM users WHERE email = $1',
+    `SELECT * FROM users WHERE email = $1`,
     [email]
   )
 
+  if (result.rows.length === 0) {
+    throw new Error('Usuário não encontrado')
+  }
+
   const user = result.rows[0]
 
-  if (!user) {
-    throw new Error('INVALID_LOGIN')
+  const validPassword = await bcrypt.compare(
+    password,
+    user.password_hash
+  )
+
+  if (!validPassword) {
+    throw new Error('Senha inválida')
   }
 
-  const valid = await bcrypt.compare(password, user.password_hash)
+  const token = generateToken({
+    id: user.id,
+    email: user.email
+  })
 
-  if (!valid) {
-    throw new Error('INVALID_LOGIN')
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }
   }
-
-  return user
 }
 
 module.exports = {
